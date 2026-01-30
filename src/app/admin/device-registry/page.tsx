@@ -40,10 +40,16 @@ import {
   ChevronsRight,
   Radio,
   Zap,
+  X,
+  CheckSquare,
+  Square,
+  Printer,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -257,6 +263,12 @@ export default function DeviceRegistryPage() {
   const [pageSize, setPageSize] = useState(25);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+
+  // Selection state for bulk operations
+  const [selectedDeviceIds, setSelectedDeviceIds] = useState<Set<string>>(new Set());
+  const [isAllSelected, setIsAllSelected] = useState(false);
+  const [isBulkActionOpen, setIsBulkActionOpen] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   // Dialog state
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
@@ -751,6 +763,148 @@ export default function DeviceRegistryPage() {
     });
   };
 
+  // Selection handlers for bulk operations
+  const handleSelectDevice = (deviceId: string, checked: boolean) => {
+    setSelectedDeviceIds((prev) => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(deviceId);
+      } else {
+        newSet.delete(deviceId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(devices.map((d) => d.device_uid));
+      setSelectedDeviceIds(allIds);
+      setIsAllSelected(true);
+    } else {
+      setSelectedDeviceIds(new Set());
+      setIsAllSelected(false);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedDeviceIds(new Set());
+    setIsAllSelected(false);
+  };
+
+  // Get selected devices as array
+  const selectedDevices = devices.filter((d) => selectedDeviceIds.has(d.device_uid));
+
+  // Bulk export selected devices
+  const handleBulkExport = () => {
+    if (selectedDevices.length === 0) return;
+
+    const headers = ['Asset Tag', 'Serial Number', 'Vendor', 'Model', 'Type', 'Status', 'Health', 'Province', 'District', 'Custodian', 'Last Seen'];
+    const rows = selectedDevices.map(d => [
+      d.asset_tag || '',
+      d.vendor_serial_number,
+      d.vendor_name,
+      d.model,
+      d.device_type,
+      d.status,
+      d.last_health_status,
+      d.current_province || '',
+      d.current_district || '',
+      d.current_custodian_name || '',
+      d.last_seen_at || '',
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `selected-devices-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'Export Complete',
+      description: `Exported ${selectedDevices.length} selected devices to CSV.`,
+    });
+  };
+
+  // Bulk print QR codes
+  const handleBulkPrintQR = () => {
+    if (selectedDevices.length === 0) return;
+    setSelectedDevicesForBatch(selectedDevices);
+    setIsBatchQRDialogOpen(true);
+  };
+
+  // Bulk status update
+  const handleBulkStatusUpdate = async (newStatus: DeviceStatus) => {
+    if (selectedDevices.length === 0) return;
+
+    try {
+      setBulkActionLoading(true);
+
+      // Update all selected devices
+      const updatePromises = selectedDevices.map((device) =>
+        updateDevice(device.device_uid, { status: newStatus })
+      );
+
+      await Promise.all(updatePromises);
+
+      toast({
+        title: 'Bulk Update Complete',
+        description: `Updated ${selectedDevices.length} devices to ${STATUS_CONFIG[newStatus].label}.`,
+      });
+
+      // Clear selection and refresh
+      clearSelection();
+      fetchData(true);
+    } catch (error) {
+      console.error('Error during bulk update:', error);
+      toast({
+        title: 'Bulk Update Failed',
+        description: 'Some devices could not be updated. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  // Bulk send to maintenance
+  const handleBulkMaintenance = async () => {
+    if (selectedDevices.length === 0) return;
+
+    try {
+      setBulkActionLoading(true);
+
+      const updatePromises = selectedDevices.map((device) =>
+        updateDevice(device.device_uid, {
+          status: 'IN_MAINTENANCE',
+          notes: `Sent to maintenance on ${new Date().toLocaleDateString()} via bulk action.`,
+        })
+      );
+
+      await Promise.all(updatePromises);
+
+      toast({
+        title: 'Devices Sent to Maintenance',
+        description: `${selectedDevices.length} devices have been sent to maintenance.`,
+      });
+
+      clearSelection();
+      fetchData(true);
+    } catch (error) {
+      console.error('Error during bulk maintenance:', error);
+      toast({
+        title: 'Operation Failed',
+        description: 'Some devices could not be updated. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   // Map data for deployed devices
   const mapDevices = devices
     .filter((d) => d.status === 'DEPLOYED_TO_SITE' && d.current_province)
@@ -1048,6 +1202,13 @@ export default function DeviceRegistryPage() {
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b">
                     <tr>
+                      <th className="px-4 py-3 w-12">
+                        <Checkbox
+                          checked={isAllSelected || (devices.length > 0 && selectedDeviceIds.size === devices.length)}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all devices"
+                        />
+                      </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Device</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Type</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
@@ -1068,8 +1229,20 @@ export default function DeviceRegistryPage() {
                       const TypeIcon = TypeConfig.icon;
                       const trend = getHealthTrend(device);
 
+                      const isSelected = selectedDeviceIds.has(device.device_uid);
+
                       return (
-                        <tr key={device.device_uid} className="hover:bg-slate-50">
+                        <tr
+                          key={device.device_uid}
+                          className={`hover:bg-slate-50 ${isSelected ? 'bg-emerald-50' : ''}`}
+                        >
+                          <td className="px-4 py-3">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) => handleSelectDevice(device.device_uid, checked as boolean)}
+                              aria-label={`Select ${device.asset_tag || device.vendor_serial_number}`}
+                            />
+                          </td>
                           <td className="px-4 py-3">
                             <div>
                               <p className="font-medium text-slate-900">{device.asset_tag || device.vendor_serial_number}</p>
@@ -2104,6 +2277,108 @@ export default function DeviceRegistryPage() {
           setSelectedDevice(null);
         }}
       />
+
+      {/* Floating Bulk Action Bar */}
+      {selectedDeviceIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+          <Card className="shadow-xl border-emerald-200 bg-white">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-4">
+                {/* Selection info */}
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 rounded-lg">
+                  <CheckSquare className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-medium text-emerald-700">
+                    {selectedDeviceIds.size} device{selectedDeviceIds.size > 1 ? 's' : ''} selected
+                  </span>
+                </div>
+
+                {/* Separator */}
+                <div className="h-8 w-px bg-slate-200" />
+
+                {/* Bulk actions */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkExport}
+                    disabled={bulkActionLoading}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-1" />
+                    Export
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkPrintQR}
+                    disabled={bulkActionLoading}
+                  >
+                    <Printer className="h-4 w-4 mr-1" />
+                    Print QR
+                  </Button>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={bulkActionLoading}
+                      >
+                        <Settings className="h-4 w-4 mr-1" />
+                        Change Status
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center">
+                      <DropdownMenuItem onClick={() => handleBulkStatusUpdate('REGISTERED_IN_INVENTORY')}>
+                        <Package className="mr-2 h-4 w-4 text-slate-600" />
+                        Move to Inventory
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBulkStatusUpdate('ALLOCATED_TO_REGION')}>
+                        <MapPin className="mr-2 h-4 w-4 text-purple-600" />
+                        Allocate to Region
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleBulkStatusUpdate('RETIRED')}>
+                        <XCircle className="mr-2 h-4 w-4 text-slate-500" />
+                        Retire
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                    onClick={handleBulkMaintenance}
+                    disabled={bulkActionLoading}
+                  >
+                    {bulkActionLoading ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <Wrench className="h-4 w-4 mr-1" />
+                    )}
+                    Maintenance
+                  </Button>
+                </div>
+
+                {/* Separator */}
+                <div className="h-8 w-px bg-slate-200" />
+
+                {/* Clear selection */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSelection}
+                  className="text-slate-500 hover:text-slate-700"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

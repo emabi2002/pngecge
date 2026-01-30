@@ -2,6 +2,16 @@
 
 ## Current Session - January 30, 2026
 
+### Completed - Bulk Device Selection
+- [x] Added checkbox column for multi-select in device table
+- [x] Added Select All checkbox in table header
+- [x] Created floating action bar when devices are selected
+- [x] Implemented bulk export to CSV
+- [x] Implemented bulk QR code printing
+- [x] Added bulk status change dropdown
+- [x] Added bulk send to maintenance action
+- [x] Selected rows highlighted with emerald background
+
 ### Completed - Device Registry Enhancements
 - [x] Connect maintenance panel to real work orders (generates from devices in maintenance status)
 - [x] Add device edit functionality with edit dialog
