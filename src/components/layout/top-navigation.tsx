@@ -44,7 +44,7 @@ const contextualMenus: Record<string, { label: string; href: string }[]> = {
     { label: 'New Registration', href: '/registration/new' },
     { label: 'Registration Review', href: '/registration/review' },
     { label: 'Photo Roll Preview', href: '/registration/photos' },
-    { label: 'ID Card Output', href: '/registration/cards' },
+    { label: 'ID Card Output', href: '/registration/id-cards' },
   ],
   '/deduplication': [
     { label: 'Dedup Dashboard', href: '/deduplication' },
