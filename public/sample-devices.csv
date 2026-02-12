@@ -1,0 +1,16 @@
+vendor_serial_number,vendor_name,model,device_type,connectivity,asset_tag,firmware_version,purchase_batch_id,warranty_expiry,notes
+FP-2024-002001,Suprema,BioMini Plus 2,fingerprint,usb,PNGEC-FP-0010,2.1.4,BATCH-2024-003,2026-06-15,Eastern Highlands deployment batch
+FP-2024-002002,Suprema,BioMini Plus 2,fingerprint,usb,PNGEC-FP-0011,2.1.4,BATCH-2024-003,2026-06-15,Eastern Highlands deployment batch
+FP-2024-002003,Suprema,BioMini Plus 2,fingerprint,usb,PNGEC-FP-0012,2.1.4,BATCH-2024-003,2026-06-15,Eastern Highlands deployment batch
+FP-2024-002004,Suprema,BioMini Slim 3,fingerprint,usb,PNGEC-FP-0013,3.0.1,BATCH-2024-003,2026-06-15,New slim model for mobile teams
+FP-2024-002005,Suprema,BioMini Slim 3,fingerprint,usb,PNGEC-FP-0014,3.0.1,BATCH-2024-003,2026-06-15,New slim model for mobile teams
+FC-2024-001001,Suprema,FaceStation 2,face,ethernet,PNGEC-FC-0005,1.5.2,BATCH-2024-004,2026-12-01,Face recognition for HQ
+FC-2024-001002,Suprema,FaceStation 2,face,ethernet,PNGEC-FC-0006,1.5.2,BATCH-2024-004,2026-12-01,Face recognition for Provincial Office
+IR-2024-000101,IrisGuard,IG-AD100,iris,usb,PNGEC-IR-0001,4.2.0,BATCH-2024-005,2027-01-15,Pilot iris scanner
+CM-2024-000501,Crossmatch,U.are.U 4500,fingerprint,usb,PNGEC-CM-0001,1.8.0,BATCH-2024-006,2025-12-31,Legacy device from previous election
+CM-2024-000502,Crossmatch,U.are.U 4500,fingerprint,usb,PNGEC-CM-0002,1.8.0,BATCH-2024-006,2025-12-31,Legacy device from previous election
+HID-2024-000101,HID Global,DigitalPersona 4500,fingerprint,usb,PNGEC-HID-0001,2.0.5,BATCH-2024-007,2026-03-01,Training center device
+HID-2024-000102,HID Global,DigitalPersona 4500,fingerprint,usb,PNGEC-HID-0002,2.0.5,BATCH-2024-007,2026-03-01,Training center device
+FP-2024-002006,Suprema,BioMini Plus 2,fingerprint,usb,PNGEC-FP-0015,2.1.4,BATCH-2024-008,2026-08-20,Western Highlands batch
+FP-2024-002007,Suprema,BioMini Plus 2,fingerprint,usb,PNGEC-FP-0016,2.1.4,BATCH-2024-008,2026-08-20,Western Highlands batch
+FP-2024-002008,Suprema,BioMini Plus 2,fingerprint,usb,PNGEC-FP-0017,2.1.4,BATCH-2024-008,2026-08-20,Western Highlands batch
